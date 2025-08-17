@@ -1,253 +1,241 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import useGlobalReducer from "../hooks/useGlobalReducer";
-import { login, requestPasswordReset } from "../services/auth"; // Asegúrate de agregar esta función en tu servicio
-
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import useGlobalReducer from "../hooks/useGlobalReducer"
+import { login, requestPasswordReset } from "../services/auth"
 
 const Login = () => {
-  const { store, dispatch } = useGlobalReducer();
+  const { store, dispatch } = useGlobalReducer()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showResetForm, setShowResetForm] = useState(false); // Nuevo estado para controlar el formulario de recuperación
-  const [resetEmail, setResetEmail] = useState(''); // Email para recuperación
-  const [resetSuccess, setResetSuccess] = useState(false); // Estado para mensaje de éxito
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const navigate = useNavigate();
+  // Recuperación de contraseña
+  const [showResetForm, setShowResetForm] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSuccess, setResetSuccess] = useState(false)
+
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
     try {
       const result = await login({
         email: formData.email,
         password: formData.password
-      });
+      })
 
-      const storage = formData.rememberMe ? localStorage : sessionStorage;
-      storage.setItem('token', result.access_token);
+      const storage = formData.rememberMe ? localStorage : sessionStorage
+      storage.setItem('token', result.access_token)
       storage.setItem('currentUser', JSON.stringify(result.results))
-      dispatch({ type: 'token', payload: result.access_token });
-      dispatch({ type: 'isLogged', payload: true });
-      dispatch({ type: 'currentUser', payload: result.results });
-      dispatch({ type: 'users', payload: [...store.users, result.results] })
 
-      navigate('/');
+      dispatch({ type: 'token', payload: result.access_token })
+      dispatch({ type: 'isLogged', payload: true })
+      dispatch({ type: 'currentUser', payload: result.results })
+      // Mantengo tu lógica original:
+      dispatch({ type: 'users', payload: [...(store.users || []), result.results] })
+
+      navigate('/')
     } catch (err) {
-      setError(err.message || 'Error al iniciar sesión');
+      setError(err.message || 'Error al iniciar sesión')
       dispatch({
         type: 'handle_alert',
-        payload: {
-          text: 'Error al iniciar sesión',
-          background: 'danger',
-          visible: true
-        }
-      });
+        payload: { text: 'Error al iniciar sesión', background: 'danger', visible: true }
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      await requestPasswordReset({ email: resetEmail.trim().toLowerCase() })
+      setResetSuccess(true)
+    } catch (err) {
+      setError(err.message || 'No se pudo enviar el correo de recuperación')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleReset = () => {
-    setFormData({
-      email: '',
-      password: '',
-      rememberMe: false
-    });
+    setFormData({ email: '', password: '', rememberMe: false })
     dispatch({
       type: 'handle_alert',
-      payload: {
-        text: 'Cancelar',
-        background: 'danger',
-        visible: true
-      }
-    });
-    navigate('/');
-  };
+      payload: { text: 'Cancelar', background: 'danger', visible: true }
+    })
+    navigate('/')
+  }
 
   return (
-    <div className="relative min-h-screen bg-brown-150 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="relative min-h-[100svh]">
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
+        <video autoPlay loop muted playsInline className="w-full h-full object-cover">
           <source src="https://res.cloudinary.com/dmtvki1tj/video/upload/v1753687889/5081297_Rural_Countryside_1920x1080_tdybmx.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
       </div>
 
-      <div className='relative z-10 px-4 py-12 wood-bg border-8 border-brown-250 sm:mx-auto sm:w-full sm:max-w-md rounded-lg shadow-xl'>
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-green-250">
-            Iniciar sesión
-          </h2>
-          <p className="mt-2 text-center text-sm text-brown-150">
-            O{' '}
-            <Link to="/register" className="font-medium text-green-150 hover:text-green-250">
-              crea una cuenta nueva
-            </Link>
-          </p>
-        </div>
+      <div className="relative z-10 flex items-center justify-center min-h-[100svh] px-4 py-10">
+        <div className="w-full max-w-xl rounded-3xl overflow-hidden bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl p-8 md:p-10">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-extrabold">
+              <span className="bg-gradient-to-br from-brown-450 to-brown-250 bg-clip-text text-transparent">
+                Iniciar sesión
+              </span>
+            </h1>
+            <div className="w-24 h-[2px] mx-auto mt-4 bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            <p className="mt-3 text-white/80 text-sm">
+              ¿No tienes cuenta?{' '}
+              <Link to="/register" className="underline decoration-green-350 decoration-2 underline-offset-4 hover:text-green-150">
+                Crea una nueva
+              </Link>
+            </p>
+          </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-green-150 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                {error}
+          {error && (
+            <div className="mb-6 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 text-red-200 px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          {resetSuccess ? (
+            <div className="text-center">
+              <div className="mb-4 rounded-2xl bg-green-500/10 ring-1 ring-green-500/30 text-green-100 px-4 py-3">
+                ¡Listo! Si el correo existe, recibirás un enlace para restablecer tu contraseña.
               </div>
-            )}
+              <button
+                onClick={() => { setShowResetForm(false); setResetSuccess(false); }}
+                className="w-full rounded-2xl border border-brown-250 bg-gradient-to-br from-brown-550 to-green-450 px-6 py-3 text-white font-semibold hover:scale-[1.02] transition"
+              >
+                Volver al login
+              </button>
+            </div>
+          ) : showResetForm ? (
+            <form className="space-y-6" onSubmit={handlePasswordReset}>
+              <div>
+                <label htmlFor="reset-email" className="text-white/90 text-sm">Correo electrónico</label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="mt-1 w-full px-4 py-3 rounded-xl border border-white/20 bg-white/90 text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-green-350"
+                  placeholder="tucorreo@email.com"
+                />
+              </div>
 
-            {resetSuccess ? (
-              <div className="text-center">
-                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">
-                  ¡Listo! Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => {
-                    setShowResetForm(false);
-                    setResetSuccess(false);
-                  }}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  type="submit"
+                  disabled={loading}
+                  className={`flex-1 rounded-2xl border border-brown-250 bg-gradient-to-br from-brown-550 to-green-450 px-6 py-3 text-white font-semibold hover:scale-[1.02] transition ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Volver al login
+                  {loading ? 'Enviando…' : 'Enviar instrucciones'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowResetForm(false)}
+                  className="flex-1 rounded-2xl border border-brown-250 bg-gradient-to-br from-brown-250 to-green-250 px-6 py-3 text-white font-semibold hover:scale-[1.02] transition"
+                >
+                  Cancelar
                 </button>
               </div>
-            ) : showResetForm ? (
-              <form className="space-y-6" onSubmit={handlePasswordReset}>
-                <div>
-                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">
-                    Correo electrónico
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="reset-email"
-                      name="resetEmail"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
+            </form>
+          ) : (
+            // Modo Login
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="email" className="text-white/90 text-sm">Correo electrónico</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1 w-full px-4 py-3 rounded-xl border border-white/20 bg-white/90 text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-green-350"
+                  placeholder="tucorreo@email.com"
+                />
+              </div>
 
-                <div className="flex justify-between">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`flex-1 mr-2 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                  >
-                    {loading ? 'Enviando...' : 'Enviar instrucciones'}
-                  </button>
+              <div>
+                <label htmlFor="password" className="text-white/90 text-sm">Contraseña</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="mt-1 w-full px-4 py-3 rounded-xl border border-white/20 bg-white/90 text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-green-350"
+                  placeholder="••••••••"
+                />
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowResetForm(false)}
-                    className="flex-1 ml-2 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Correo electrónico
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-white/90 text-sm">
+                  <input
+                    id="remember-me"
+                    name="rememberMe"
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={handleChange}
+                    className="h-4 w-4 rounded border-white/30 bg-white/90 text-green-450 focus:ring-green-350"
+                  />
+                  Recordarme
+                </label>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Contraseña
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowResetForm(true); setError(null); }}
+                  className="text-white/80 text-sm underline decoration-green-350 underline-offset-4 hover:text-green-150"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="rememberMe"
-                      type="checkbox"
-                      checked={formData.rememberMe}
-                      onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                      Recordarme
-                    </label>
-                  </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`flex-1 rounded-2xl border border-brown-250 bg-gradient-to-br from-brown-550 to-green-450 px-6 py-3 text-white font-semibold hover:scale-[1.02] transition ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
+                </button>
 
-                 
-                </div>
-
-                <div className="flex justify-between">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`flex-1 mr-2 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                  >
-                    {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="flex-1 ml-2 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex-1 rounded-2xl border border-brown-250 bg-gradient-to-br from-brown-250 to-green-250 px-6 py-3 text-white font-semibold hover:scale-[1.02] transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

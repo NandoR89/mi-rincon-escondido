@@ -1,133 +1,148 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import useGlobalReducer from "../hooks/useGlobalReducer";
-import { getCurrentBooking } from "../services/book";
-import { calculateNights, calculateTotalStayCost } from '../tools/utilFunctions';
-import { Link } from "react-router-dom";
-
+import { useEffect, useState } from "react"
+import { useParams, Link } from "react-router-dom"
+import useGlobalReducer from "../hooks/useGlobalReducer"
+import { getCurrentBooking } from "../services/book"
+import { calculateNights, calculateTotalStayCost } from "../tools/utilFunctions"
 
 export const CurrentBooking = () => {
   const { id } = useParams()
   const { store, dispatch } = useGlobalReducer()
-  const currentBooking = store.bookingsDetail.find(booking => booking.id === parseInt(id))
+  const currentBooking = store.bookingsDetail.find(b => b.id === parseInt(id))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchCurrentBooking = async (id) => {
-      if (!id) {
+    const fetchCurrentBooking = async bookingId => {
+      if (!bookingId) {
         setLoading(false)
         return
       }
-
       try {
-        const data = await getCurrentBooking(id)
+        const data = await getCurrentBooking(bookingId)
         dispatch({ type: "currentBooking", payload: data })
       } catch (err) {
-        console.error("Error cargando reserva:", err)
-        if (err.message.includes('Sesión expirada')) {
-          dispatch({ type: 'logout' })
+        if (err.message?.includes("Sesión expirada")) {
+          dispatch({ type: "logout" })
         }
       } finally {
         setLoading(false)
       }
-    };
-
-    fetchCurrentBooking()
-  }, [id])
+    }
+    fetchCurrentBooking(id)
+  }, [id, dispatch])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-white">Cargando detalles de la reserva...</p>
+      <div className="bg-hero text-white">
+        <div className="min-h-[100svh] flex items-center justify-center p-6">
+          <div className="mx-auto max-w-md w-full rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/10 p-6 text-center shadow-2xl">
+            Cargando detalles de la reserva...
+          </div>
+        </div>
       </div>
-    );
+    )
   }
 
   if (!currentBooking) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-white">No se encontró la reserva.</p>
+      <div className="bg-hero text-white">
+        <div className="min-h-[100svh] flex items-center justify-center p-6">
+          <div className="mx-auto max-w-md w-full rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/10 p-6 text-center shadow-2xl">
+            No se encontró la reserva
+          </div>
+        </div>
       </div>
-    );
+    )
   }
 
-  const hutName = currentBooking.hut_to?.name || 'Cabaña sin nombre'
+  const hutName = currentBooking.hut_to?.name || "Cabaña sin nombre"
+  const total = calculateTotalStayCost(
+    currentBooking.hut_to.price_per_night,
+    calculateNights(currentBooking.start_date, currentBooking.end_date)
+  )
 
   return (
-    <div className="current-booking bg-gray-900 min-h-screen p-4 md:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="booking-bg border-4 border-green-150 rounded-2xl bg-gray-800 shadow-xl">
-          <div className="bg-gradient-to-b from-green-550 to-green-250 rounded-tl-xl rounded-tr-xl px-5 py-4">
-            <h2 className="text-2xl font-semibold text-white">
-              Reserva #{currentBooking.id}
-            </h2>
+    <div className="bg-hero text-white bg-black/50">
+      <div className="min-h-[100svh] p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="w-full max-w-3xl rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/10 shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-br from-brown-550 to-green-450 px-6 py-5">
+            <h2 className="text-2xl font-semibold">Reserva #{currentBooking.id}</h2>
           </div>
-          <div className="px-5 py-4 space-y-3">
-            <ul className="text-white space-y-4 text-sm sm:text-base">
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Cabaña:</span>
-                <span className="text-right">
+
+          <div className="px-6 py-5 space-y-4">
+            <ul className="space-y-4 text-sm sm:text-base">
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Cabaña</span>
+                <span className="text-right min-w-[50%]">
                   <span className="block font-medium">{hutName}</span>
-                  <span className="flex flex-col">
-                    <span className="text-gray-400 text-xs">{currentBooking.hut_to.location_to.complex}</span>
-                    <span className="text-gray-400 text-xs">{currentBooking.hut_to.location_to.address}</span>
-                    <span className="text-gray-400 text-xs">{currentBooking.hut_to.location_to.city}</span>
+                  <span className="flex flex-col text-white/70 text-xs">
+                    <span>{currentBooking.hut_to.location_to.complex}</span>
+                    <span>{currentBooking.hut_to.location_to.address}</span>
+                    <span>{currentBooking.hut_to.location_to.city}</span>
                   </span>
                 </span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Fecha de entrada:</span>
-                <span>{new Date(currentBooking.start_date).toLocaleDateString()}</span>
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Fecha de entrada</span>
+                <span className="text-white/90">
+                  {new Date(currentBooking.start_date).toLocaleDateString("es-ES")}
+                </span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Fecha de salida:</span>
-                <span>{new Date(currentBooking.end_date).toLocaleDateString()}</span>
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Fecha de salida</span>
+                <span className="text-white/90">
+                  {new Date(currentBooking.end_date).toLocaleDateString("es-ES")}
+                </span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Huéspedes:</span>
-                <span>{currentBooking.guests}</span>
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Huéspedes</span>
+                <span className="text-white/90">{currentBooking.guests}</span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Importe total:</span>
-                <span className="font-bold">{calculateTotalStayCost(currentBooking.hut_to.price_per_night, calculateNights(currentBooking.start_date, currentBooking.end_date))} €</span>
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Importe total</span>
+                <span className="font-bold">{total} €</span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Solicitudes especiales:</span>
-                <span>{currentBooking.special_requests || 'Ninguna'}</span>
+              <li className="flex justify-between gap-4 pb-3 border-b border-white/10">
+                <span className="font-semibold text-white/90">Solicitudes especiales</span>
+                <span className="text-white/90">{currentBooking.special_requests || "Ninguna"}</span>
               </li>
 
-              <li className="flex justify-between pb-2 border-b border-gray-700">
-                <span className="font-semibold text-gray-300">Estado de la reserva:</span>
-                <span>{currentBooking.status_reserved === 'active' ? '✅ Confirmado' : '⚠ Pendiente'}</span>
+              <li className="flex justify-between gap-4 pb-1">
+                <span className="font-semibold text-white/90">Estado de la reserva</span>
+                <span className="text-white/90">
+                  {currentBooking.status_reserved === "active" ? "✅ Confirmado" : "⚠ Pendiente"}
+                </span>
               </li>
-
-              {/* <li className="flex justify-between pb-2">
-                <span className="font-semibold text-gray-300">Estado del pago:</span>
-                <span>{currentBooking.status_payment ? '✅ Confirmado' : '⚠ Pendiente'}</span>
-              </li> */}
             </ul>
           </div>
 
-          <div className="flex justify-center px-5 py-3 bg-gradient-to-t from-green-550 to-green-250 rounded-bl-xl rounded-br-xl">
-
-            {
-              store.currentUser.is_admin ?
-                <Link to="/bookings" className="bg-gradient-to-br from-brown-250 to-green-250 rounded-3xl border border-brown-250 text-center text-sm md:text-base p-2 hover:scale-[1.02] text-white">
-                  Volver a "Reservas"
+          <div className="px-6 py-4 bg-white/5">
+            {store.currentUser?.is_admin ? (
+              <div className="flex justify-center">
+                <Link
+                  to="/bookings"
+                  className="bg-gradient-to-br from-brown-250 to-green-250 rounded-3xl border border-brown-250 text-center px-5 py-2 text-white hover:scale-[1.02] transition"
+                >
+                  Volver a Reservas
                 </Link>
-                :
-                <Link to="/bookings" className="bg-gradient-to-br from-brown-250 to-green-250 rounded-3xl border border-brown-250 text-center text-sm md:text-base p-2 hover:scale-[1.02] text-white">
-                  Volver a "Mis Reservas"
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <Link
+                  to="/bookings"
+                  className="bg-gradient-to-br from-brown-250 to-green-250 rounded-3xl border border-brown-250 text-center px-5 py-2 text-white hover:scale-[1.02] transition"
+                >
+                  Volver a Mis Reservas
                 </Link>
-            }
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

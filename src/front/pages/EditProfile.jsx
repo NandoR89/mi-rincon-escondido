@@ -31,40 +31,32 @@ export const EditProfile = () => {
         address: store.currentUser.address || '',
         profile_image: store.currentUser.profile_image || ''
       })
-      setImagePreview(store.currentUser.profile_image || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png')
+      setImagePreview(
+        store.currentUser.profile_image ||
+          'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png'
+      )
     }
-    console.log('currentUser cambió:', store.currentUser)
   }, [store.currentUser])
 
-  const handleImageUpload = async event => {
-    const file = event.target.files[0]
+  const handleImageUpload = e => {
+    const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.match('image.*')) {
-      toast.warning('Por favor, selecciona un archivo de imagen', {
-        position: 'top-center',
-        autoClose: 3000,
-        theme: 'colored'
-      })
+      toast.warning('Por favor, selecciona un archivo de imagen', { position: 'top-center', autoClose: 3000, theme: 'colored' })
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.warning('La imagen es demasiado grande (máximo 5MB)', {
-        position: 'top-center',
-        autoClose: 3000,
-        theme: 'colored'
-      })
+      toast.warning('La imagen es demasiado grande (máximo 5MB)', { position: 'top-center', autoClose: 3000, theme: 'colored' })
       return
     }
     const reader = new FileReader()
-    reader.onload = () => {
-      setImagePreview(reader.result)
-    }
+    reader.onload = () => setImagePreview(reader.result)
     reader.readAsDataURL(file)
     setPendingAvatarFile(file)
   }
 
-  const handleSubmit = async event => {
-    event.preventDefault()
+  const handleSubmit = async e => {
+    e.preventDefault()
     setIsUploading(true)
     try {
       let payload = { ...formData }
@@ -75,17 +67,11 @@ export const EditProfile = () => {
       const updated = await updateUser(store.currentUser.id, payload)
       const updatedUser = updated.results || updated.user || updated
       dispatch({ type: 'currentUser', payload: updatedUser })
-      console.log(updatedUser)
       const storage = localStorage.getItem('token') ? localStorage : sessionStorage
       storage.setItem('currentUser', JSON.stringify(updatedUser))
-      toast.success('¡Perfil actualizado correctamente!', {
-        position: 'top-center',
-        autoClose: 3000,
-        theme: 'colored'
-      })
+      toast.success('¡Perfil actualizado correctamente!', { position: 'top-center', autoClose: 3000, theme: 'colored' })
       navigate(`/profile/${updatedUser.id}`)
     } catch (error) {
-      console.error('Error al guardar:', error)
       alert(error.message || 'Error al actualizar el perfil')
     } finally {
       setIsUploading(false)
@@ -93,104 +79,118 @@ export const EditProfile = () => {
     }
   }
 
-  const handleReturnProfile = () => {
-    navigate(-1)
-  }
+  const handleReturnProfile = () => navigate(-1)
 
   return (
-    <div className='flex justify-center items-center min-h-screen p-4'>
-      <form onSubmit={handleSubmit} className='rounded-3xl border-8 border-brown-250 w-full max-w-2xl bg-green-150 space-y-6 p-6'>
-        <h2 className='text-center text-4xl md:text-5xl font-bold text-green-350'>Editar Perfil</h2>
-        <div className='flex flex-col items-center'>
-          <div className='relative'>
-            <img
-              src={imagePreview}
-              alt='Foto de perfil'
-              className='h-32 w-32 rounded-full border-4 border-white object-cover cursor-pointer hover:opacity-90 transition-opacity'
-              onClick={() => fileInputRef.current?.click()}
+    <div className="bg-hero text-white bg-black/50">
+      <div className="min-h-[100svh] flex items-center justify-center p-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-2xl rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/10 shadow-2xl p-6 md:p-8 space-y-6">
+          <h2 className="text-center text-4xl md:text-5xl font-bold tracking-tight">
+            <span className="bg-gradient-to-br from-brown-450 to-brown-250 bg-clip-text text-transparent">Editar Perfil</span>
+          </h2>
+
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <img
+                src={imagePreview}
+                alt="Foto de perfil"
+                className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-white object-cover cursor-pointer hover:opacity-90 transition"
+                onClick={() => fileInputRef.current?.click()}
+              />
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
             />
-            {isUploading && (
-              <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full'>
-                <div className='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white'></div>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-3 rounded-full bg-gradient-to-br from-brown-550 to-green-450 border border-brown-250 px-4 py-2 text-sm hover:scale-[1.02] transition"
+            >
+              Cambiar foto
+            </button>
           </div>
-          <input
-            type='file'
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            accept='image/*'
-            className='hidden'
-          />
-          <p className='text-white text-sm mt-2'>
-            {isUploading ? 'Subiendo imagen...' : 'Haz clic para cambiar la foto'}
-          </p>
-        </div>
-        <div className='mb-4'>
-          <label className='block text-white mb-2'>Nombre</label>
-          <input
-            type='text'
-            value={formData.first_name}
-            onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-            className='w-full p-3 rounded-lg border bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-350'
-            required
-          />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-white mb-2'>Apellidos</label>
-          <input
-            type='text'
-            value={formData.last_name}
-            onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-            className='w-full p-3 rounded-lg border bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-350'
-            required
-          />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-white mb-2'>Email</label>
-          <input
-            type='email'
-            value={formData.email}
-            className='w-full p-3 rounded-lg border bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-350 disabled:opacity-50'
-            required
-            disabled
-          />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-white mb-2'>Teléfono</label>
-          <input
-            type='tel'
-            value={formData.phone_number}
-            onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
-            className='w-full p-3 rounded-lg border bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-350'
-          />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-white mb-2'>Dirección</label>
-          <input
-            type='text'
-            value={formData.address}
-            onChange={e => setFormData({ ...formData, address: e.target.value })}
-            className='w-full p-3 rounded-lg border bg-white/90 focus:outline-none focus:ring-2 focus:ring-green-350'
-          />
-        </div>
-        <div className='flex flex-col sm:flex-row justify-between gap-4 mt-8'>
-          <button
-            onClick={handleReturnProfile}
-            type='button'
-            className='bg-gradient-to-br from-brown-250 to-green-250 text-center p-3 rounded-3xl border border-brown-250 hover:scale-[1.02] transition-transform md:w-1/4 text-white'
-          >
-            Cancelar
-          </button>
-          <button
-            type='submit'
-            disabled={isUploading}
-            className={`bg-gradient-to-br from-brown-550 to-green-450 p-3 rounded-3xl border border-brown-250 hover:scale-[1.02] transition-transform md:w-1/4 text-white ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isUploading ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </div>
-      </form>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white mb-2">Nombre</label>
+              <input
+                type="text"
+                value={formData.first_name}
+                onChange={e => setFormData({ ...formData, first_name: e.target.value })}
+                className="w-full border bg-stone-300/10 px-4 py-3 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-350"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-2">Apellidos</label>
+              <input
+                type="text"
+                value={formData.last_name}
+                onChange={e => setFormData({ ...formData, last_name: e.target.value })}
+                className="w-full border bg-stone-300/10 px-4 py-3 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-350"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-white mb-2">Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              disabled
+              className="w-full border bg-stone-300/10 px-4 py-3 rounded-lg text-lg disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-green-350"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2">Teléfono</label>
+            <input
+              type="tel"
+              value={formData.phone_number}
+              onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
+              className="w-full border bg-stone-300/10 px-4 py-3 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-350"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-2">Dirección</label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={e => setFormData({ ...formData, address: e.target.value })}
+              className="w-full border bg-stone-300/10 px-4 py-3 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-350"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between gap-4 pt-2">
+            <button
+              onClick={handleReturnProfile}
+              type="button"
+              className="w-full sm:w-1/3 bg-gradient-to-br from-brown-250 to-green-250 rounded-3xl border border-brown-250 text-center p-3 hover:scale-[1.02] text-white transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isUploading}
+              className={`w-full sm:w-1/3 bg-gradient-to-br from-brown-550 to-green-450 rounded-3xl border border-brown-250 text-center p-3 hover:scale-[1.02] text-white transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isUploading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
