@@ -94,7 +94,7 @@ export const Profile = () => {
               </div>
               <div className="text-center sm:text-left">
                 <h2 className="font-extrabold text-2xl md:text-3xl tracking-tight bg-gradient-to-br from-green-250 to-brown-250 bg-clip-text text-transparent">
-                  {profileUser.first_name || "No especificado"} {profileUser.last_name || ""}
+                  {profileUser.first_name || ""} {profileUser.last_name || ""}
                 </h2>
                 <div className="mt-1 inline-flex items-center gap-2 text-white/90">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor">
