@@ -6,7 +6,7 @@ import { register } from "../services/auth"
 const Register = () => {
   const { store, dispatch } = useGlobalReducer()
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
     email: '',
     password: '',
     agreeTerms: false
@@ -33,7 +33,7 @@ const Register = () => {
 
     try {
       const dataToSend = {
-        name: formData.name,
+        first_name: formData.first_name,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.password_confirmation
@@ -64,7 +64,7 @@ const Register = () => {
   }
 
   const handleReset = () => {
-    setFormData({ name: '', email: '', password: '', agreeTerms: false })
+    setFormData({ first_name: '', email: '', password: '', agreeTerms: false })
     dispatch({
       type: 'handle_alert',
       payload: { text: 'Formulario cancelado', background: 'warning', visible: true }
@@ -107,13 +107,13 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="text-white/90 text-sm">Nombre</label>
+              <label htmlFor="first_name" className="text-white/90 text-sm">Nombre</label>
               <input
-                id="name"
-                name="name"
+                id="first_name"
+                name="first_name"
                 type="text"
                 required
-                value={formData.name}
+                value={formData.first_name}
                 onChange={handleChange}
                 className="mt-1 w-full px-4 py-3 rounded-xl border border-white/20 bg-white/90 text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-green-350"
                 placeholder="Tu nombre"
