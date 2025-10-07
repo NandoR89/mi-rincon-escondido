@@ -33,7 +33,7 @@ export const Contact = () => {
       </div>
 
       <div className="flex flex-col items-center mx-auto px-4 py-12 text-white min-h-[100svh]">
-        <h1 className="text-4xl text-center md:text-6xl lg:text-8xl font-bold tracking-tight mb-6">
+        <h1 className="text-4xl text-center md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
           <span className="bg-gradient-to-br from-brown-450 to-brown-250 bg-clip-text text-transparent">Contáctanos</span>
         </h1>
         <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-50 mb-8" />

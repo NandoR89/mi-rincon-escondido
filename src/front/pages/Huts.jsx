@@ -173,8 +173,8 @@ const Huts = () => {
     )
 
   return (
-    <div className="container mx-auto px-4 py-12 bg-black/50 min-h-screen">
-      <h1 className="text-4xl text-center md:text-6xl lg:text-8xl font-bold tracking-tight mb-6">
+    <div className="mx-auto px-4 py-12 bg-black/50 min-h-screen">
+      <h1 className="text-4xl text-center md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
         <span className="bg-gradient-to-br from-brown-450 to-brown-250 bg-clip-text text-transparent">
           Nuestras Cabañas
         </span>
@@ -204,11 +204,11 @@ const Huts = () => {
       )}
 
       {store.hutsDetail.length === 0 ? (
-        <div className="bg-brown-150 border-2 border-brown-250 rounded-lg p-8 text-center shadow-sm">
-          <p className="text-brown-550 text-xl mb-6">No hay cabañas disponibles</p>
+        <div className="mx-auto max-w-xl rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/10 p-8 text-center shadow-2xl">
+          <p className="text-white/90 text-xl mb-6">No hay cabañas disponibles</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-green-350 hover:bg-green-450 text-white font-bold py-3 px-8 rounded-md shadow-md transition-all hover:shadow-lg"
+            className="rounded-full bg-gradient-to-br from-brown-550 to-green-450 px-8 py-3 font-medium text-white shadow-lg hover:scale-[1.02] transition"
           >
             Reintentar
           </button>

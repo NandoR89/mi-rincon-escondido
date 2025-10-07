@@ -35,7 +35,7 @@ export const Favorites = () => {
   return (
     <div className="bg-hero text-white bg-black/50">
       <div className="container mx-auto px-4 py-12 min-h-[100svh]">
-        <h1 className="text-4xl text-center md:text-6xl lg:text-8xl font-bold tracking-tight mb-6">
+        <h1 className="text-4xl text-center md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
           <span className="bg-gradient-to-br from-brown-450 to-brown-250 bg-clip-text text-transparent">
             Mis Cabañas Favoritas
           </span>
