@@ -4,21 +4,31 @@ import { getHutsDetail } from '../services/hut';
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import { Link } from 'react-router-dom';
 
-
 const key_api_maps = import.meta.env.VITE_CLAVE_API_GOOGLE_MAPS
 
-
-
 export const Map = () => {
-
   const [selectedHut, setSelectedHut] = useState(null);
-  const [center, setCenter] = useState({ lat: 41.3851, lng: 2.1734 }); // Barcelona por defecto
-  const [mounted, setMounted] = useState (false)
+  const [center, setCenter] = useState({ lat: 41.3851, lng: 2.1734 });
+  const [mounted, setMounted] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  const { store, dispatch } = useGlobalReducer();
+  const huts = store.hutsDetail
 
-const { store, dispatch } = useGlobalReducer();
-
-const huts = store.hutsDetail
+  // ==================== DEBUG MEJORADO ====================
+  useEffect(() => {
+    console.log('🔍 Total de cabañas:', huts);
+    if (huts.length > 0) {
+      huts.forEach((hut, index) => {
+        console.log(`🔍 Cabaña ${index}:`, hut.name);
+        console.log(`   location_to:`, hut.location_to);
+        if (hut.location_to) {
+          console.log(`   position:`, hut.location_to.position);
+          console.log(`   lat:`, hut.location_to.position?.lat, `lng:`, hut.location_to.position?.lng);
+        }
+      });
+    }
+  }, [huts]);
 
   const mapStyles = {
     height: "70vh",
@@ -27,13 +37,11 @@ const huts = store.hutsDetail
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
   };
 
-  
-useEffect(() => {
+  useEffect(() => {
     const getHuts = async () => {
       try {
         const HutsData = await getHutsDetail();
         dispatch({ type: "hutsDetail", payload: HutsData });
-
       } catch (error) {
         console.error("Error fetching huts:", error);
       }
@@ -41,78 +49,102 @@ useEffect(() => {
 
     getHuts();
     setMounted(true)
-
   }, []);
+
+  // ==================== FILTRADO MEJORADO ====================
+  const hutsWithValidLocation = huts.filter(hut => {
+    if (!hut.location_to) {
+      console.log(`❌ Cabaña "${hut.name}" no tiene location_to`);
+      return false;
+    }
+    
+    const position = hut.location_to.position;
+    const hasValidCoords = position && position.lat && position.lng;
+    
+    if (!hasValidCoords) {
+      console.log(`❌ Cabaña "${hut.name}" tiene coordenadas inválidas:`, position);
+    } else {
+      console.log(`✅ Cabaña "${hut.name}" tiene coordenadas válidas:`, position);
+    }
+    
+    return hasValidCoords;
+  });
+
+  console.log('📍 Cabañas con ubicación válida:', hutsWithValidLocation.length);
 
   const handleOnClickHut = (item) => {
     setSelectedHut(item)
   }
+
   if (!mounted) {
     return (<div> Cargando ... </div>)
   }
+
   return (
-      <LoadScript
-            googleMapsApiKey={key_api_maps}
-            libraries={['places']}
-            >
-              
-      <GoogleMap
-        mapContainerStyle={mapStyles}
-        zoom={10}
+    <LoadScript
+      googleMapsApiKey={key_api_maps}
+      libraries={['places']}
+      onLoad={() => {
+        console.log('✅ Google Maps cargado');
+        setIsLoaded(true);
+      }}
+      onError={(error) => console.error('❌ Error cargando Google Maps:', error)}
+    >
+      <GoogleMap 
+        mapContainerStyle={mapStyles} 
+        zoom={10} 
         center={center}
+        options={{
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: true
+        }}
       >
-        {huts.map(hut => (
+        {hutsWithValidLocation.map(hut => (
           <Marker
             key={hut.id}
             position={hut.location_to.position}
             onClick={() => handleOnClickHut(hut)}
             icon={{
               url: "https://maps.google.com/mapfiles/ms/icons/lodging.png",
-              scaledSize: new google.maps.Size(32, 32),  // Sin 'window.'
-              origin: new google.maps.Point(0, 0),
-              anchor: new google.maps.Point(16, 16)
+              scaledSize: new window.google.maps.Size(40, 40),
+              origin: new window.google.maps.Point(0, 0),
+              anchor: new window.google.maps.Point(20, 20)
             }}
           />
         ))}
       
-
-        {selectedHut && (
-          <InfoWindow className="w-64 bg-white rounded-lg overflow-hidden shadow-xl"
+        {selectedHut && selectedHut.location_to && (
+          <InfoWindow 
             position={selectedHut.location_to.position}
             onCloseClick={() => setSelectedHut(null)}
           >
-            <div className="p-2">
-              <div className="bg-green-350 p-3">
-          <h3 className="font-bold text-white text-lg">{selectedHut.name}</h3>
-        </div>
-              <div className="p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">${selectedHut.price_per_night}/noche</span>
-            {/* <div className="flex items-center">
-              <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-              <span className="text-sm font-bold text-gray-900">4.8</span>
-            </div> */}
-          </div>
-          </div>
-              <img
-                src={selectedHut.image_url}
-                alt={selectedHut.name}
-                className="w-full h-32 object-cover rounded-lg mb-3"
-              />
-              <Link
-                to={`/huts/${selectedHut.id}`}
-                className="block w-full text-center bg-green-350 hover:bg-green-550 text-white py-2 px-4 rounded-lg transition-colors duration-300"
-              >
-                Ver detalles
-              </Link>
+            <div className="w-64 bg-white rounded-lg overflow-hidden shadow-xl">
+              <div className="p-2">
+                <div className="bg-green-350 p-3">
+                  <h3 className="font-bold text-white text-lg">{selectedHut.name}</h3>
+                </div>
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">${selectedHut.price_per_night}/noche</span>
+                  </div>
+                </div>
+                <img
+                  src={selectedHut.image_url}
+                  alt={selectedHut.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                />
+                <Link
+                  to={`/huts/${selectedHut.id}`}
+                  className="block w-full text-center bg-green-350 hover:bg-green-550 text-white py-2 px-4 rounded-lg transition-colors duration-300"
+                >
+                  Ver detalles
+                </Link>
+              </div>
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
-</LoadScript>  
-  
+    </LoadScript>  
   );
 };
-

@@ -614,7 +614,7 @@ def post_huts():
     hut.bathroom = data.get('bathroom', hut.bathroom)
     hut.price_per_night = data.get('price_per_night', hut.price_per_night)
     hut.location_id = data.get('location_id', hut.location_id)
-    hut.image_url = data.get('image_url', hut.image_url),
+    hut.image_url = data.get('image_url', hut.image_url)
     hut.is_active = data.get('is_active', hut.is_active)
     db.session.add(hut)
     db.session.commit()

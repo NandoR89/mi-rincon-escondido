@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { createHut } from '../services/hut'
 import { addHutAlbumUrls } from '../services/hutsAlbums'
 import useGlobalReducer from '../hooks/useGlobalReducer'
+// ==================== IMPORTAR EL SERVICIO DE LOCATION ====================
+import { createLocation } from '../services/location'
 
 const HutForm = () => {
   const { store } = useGlobalReducer()
@@ -17,10 +19,10 @@ const HutForm = () => {
     bedrooms: 1,
     bathroom: 1,
     price_per_night: 100,
-    location_id: 1,
+    location_id: null,
     image_url: '',
     is_active: true,
-    location_coords: { lat: null, lng: null },
+    // location_to: { lat: null, lng: null },
     image_file: null,
     image_preview: ''
   })
@@ -31,6 +33,16 @@ const HutForm = () => {
     living_room: '',
     kitchen: '',
     other_picture: ''
+  })
+
+  // ==================== NUEVO ESTADO PARA LA UBICACIÓN ====================
+  const [location, setLocation] = useState({
+    address: "",
+    city: "",
+    complex: "",
+    latitude: null,
+    longitude: null,
+    region: ""
   })
 
   const handleChange = event => {
@@ -57,17 +69,71 @@ const HutForm = () => {
     }))
   }
 
+  // ==================== MANEJADOR DE CAMBIOS PARA LA UBICACIÓN ====================
+  const handleLocationChange = event => {
+    const { name, value } = event.target
+    setLocation(prev => ({
+      ...prev,
+      [name]: name === 'latitude' || name === 'longitude' ? (value === '' ? null : parseFloat(value)) : value
+    }))
+  }
+
+  // ==================== MANEJADOR DE SUBMIT ACTUALIZADO ====================
   const handleSubmit = async event => {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
 
-    try {
-      const created = await createHut(hutData)
+  try {
+    let finalLocationId = null;
+
+    // ==================== PRIMERO CREAMOS LA UBICACIÓN SI HAY DATOS ====================
+    const hasLocationData = location.address && location.city && location.region && location.latitude && location.longitude;
+    
+    if (hasLocationData) {
+      console.log('📍 Creando nueva ubicación...', location);
+      const locationResponse = await createLocation(location);
+      console.log('📍 Respuesta completa de createLocation:', locationResponse);
+      
+      // ==================== CORREGIDO: EL ID ESTÁ EN RESULTS ====================
+      finalLocationId = locationResponse.results?.id;
+      
+      console.log('✅ Ubicación creada con ID:', finalLocationId);
+      
+      if (!finalLocationId) {
+        throw new Error('No se pudo obtener el ID de la ubicación creada');
+      }
+    } else {
+      // Si no hay datos de ubicación, usar el location_id del formulario
+      finalLocationId = hutData.location_id;
+      console.log('ℹ️ Usando location_id del formulario:', finalLocationId);
+    }
+
+    // ==================== VERIFICAR QUE TENEMOS UN location_id VÁLIDO ====================
+    if (!finalLocationId) {
+      throw new Error('Debe proporcionar una ubicación: complete los campos de ubicación');
+    }
+
+    // ==================== CREAR LA CABAÑA ====================
+    const hutDataToSend = {
+      name: hutData.name,
+      description: hutData.description,
+      capacity: Number(hutData.capacity),
+      bedrooms: Number(hutData.bedrooms),
+      bathroom: Number(hutData.bathroom),
+      price_per_night: Number(hutData.price_per_night),
+      location_id: Number(finalLocationId),
+      image_url: hutData.image_url,
+      is_active: Boolean(hutData.is_active)
+    };
+      console.log('📤 Enviando datos:', hutDataToSend); // Para debug
+
+      const created = await createHut(hutDataToSend)
       const createdHut = created.results || created.hut || created
       const hutId = createdHut?.id
       if (!hutId) throw new Error('No se pudo obtener el ID de la cabaña creada')
 
+      // ==================== AGREGAR FOTOS AL ÁLBUM ====================
       const types = ['bedroom', 'bathroom', 'living_room', 'kitchen', 'other_picture']
       const tasks = []
 
@@ -204,7 +270,7 @@ const HutForm = () => {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm mb-2">Ubicación ID <span className="text-red-400">*</span></label>
                   <input
                     type="number"
@@ -215,7 +281,7 @@ const HutForm = () => {
                     required
                     className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
                   />
-                </div>
+                </div> */}
 
                 <label className="inline-flex items-center gap-2">
                   <input
@@ -227,6 +293,88 @@ const HutForm = () => {
                   />
                   <span className="text-white/90 text-sm">Cabaña activa</span>
                 </label>
+              </div>
+            </div>
+
+            {/* ==================== NUEVA SECCIÓN PARA LA UBICACIÓN ==================== */}
+            <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
+              <h3 className="text-lg font-semibold mb-4">Información de Ubicación (Opcional)</h3>
+              <p className="text-sm text-white/70 mb-4">Complete estos campos para crear una nueva ubicación, o use el Location ID existente arriba.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm mb-2">Dirección</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={location.address}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: Calle Principal 123"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Ciudad</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={location.city}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: Bilbao"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Región</label>
+                  <input
+                    type="text"
+                    name="region"
+                    value={location.region}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: País Vasco"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Complejo/Urbanización</label>
+                  <input
+                    type="text"
+                    name="complex"
+                    value={location.complex}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: Fiopans"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Latitud</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    value={location.latitude || ''}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: 43.292939"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Longitud</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    value={location.longitude || ''}
+                    onChange={handleLocationChange}
+                    className="w-full p-3 rounded-lg border border-white/20 bg-white/90 text-stone-900 focus:outline-none focus:ring-2 focus:ring-green-350"
+                    placeholder="Ej: -2.711772"
+                  />
+                </div>
               </div>
             </div>
 
